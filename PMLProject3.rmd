@@ -1,0 +1,100 @@
+---
+title: "Practical Machine Learning Project"
+author: "MD Kinney"
+date: "April 24, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE, message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Overview
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement - a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, the goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways.More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
+
+## Data Source
+The training data for this project are available here:
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+The test data are available here:
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+The data for this project come from this source: http://groupware.les.inf.puc-rio.br/har. 
+
+## Loading the Data
+
+```{r, warning=FALSE, message=FALSE, cache=TRUE}
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+library(caret)
+library(randomForest)
+library(rpart)
+library(rpart.plot)
+library(corrplot)
+
+TrainURL <- "http://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+TestURL  <- "http://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+
+# download the datasets
+trainingdata <- read.csv(url(TrainURL))
+testingdata  <- read.csv(url(TestURL))
+
+```
+
+## Cleaning the Data
+Remove all columns that contains NA and remove features that are not in the testing dataset. 
+```{r}
+features <- names(testingdata[,colSums(is.na(testingdata)) == 0])[8:59]
+# Only use features used in testing cases.
+trainingdata <- trainingdata[,c(features,"classe")]
+testingdata <- testingdata[,c(features,"problem_id")]
+
+dim(trainingdata); dim(testingdata);
+```
+
+## Partitioning the Dataset
+I split the data into a training data set (70% of the total cases) and a testing data set (30% of the total cases).
+```{r}
+set.seed(22519)
+inTrain <- createDataPartition(trainingdata$classe, p=0.7, list=FALSE)
+training <- trainingdata[inTrain,]
+testing <- trainingdata[-inTrain,]
+dim(training)
+dim(testing)
+```
+
+## Data Modelling
+Using Decision Tree
+```{r}
+set.seed(22519)
+FitData <- rpart(classe ~ ., data = training, method="class")
+prediction <- predict(FitData, testing, type = "class")
+cmtree <- confusionMatrix(prediction, testing$classe)
+
+plot(cmtree$table, col = cmtree$byClass, main = paste("Decision Tree Confusion Matrix: Accuracy =", round(cmtree$overall['Accuracy'], 5)))
+```
+
+
+Using Random Forest algorithm with 5-fold cross validation when applying the algorithm.
+```{r, cache=TRUE}
+controlRf <- trainControl(method="cv", 5)
+rfmod<- train(classe ~., data=training, method="rf", trControl=controlRf, importance=TRUE, ntree=100)
+rfmod
+plot(rfmod,main="Accuracy of Random Forest model by number of predictors")
+```
+
+## Accuracy of the model on Validation data set
+```{r}
+predictRfmod<- predict(rfmod, testing)
+confusionMatrix(testing$classe, predictRfmod)
+# Calculating the accuracy of the sample
+accuracy <- postResample(predictRfmod, testing$classe)
+accuracy
+# Calculating the sample error rate
+Error <- 1 - as.numeric(confusionMatrix(testing$classe, predictRfmod)$overall[1])
+Error
+```
+
+## Conclusion
+The estimated accuracy of the Random Forests model is 99.34% and the estimated out-of-sample error is 0.66%. Compared to the Decison Tree model results, the Random Forests model is more accurate.
+
+
