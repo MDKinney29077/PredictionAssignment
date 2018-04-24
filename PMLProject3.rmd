@@ -94,7 +94,13 @@ Error <- 1 - as.numeric(confusionMatrix(testing$classe, predictRfmod)$overall[1]
 Error
 ```
 
+
 ## Conclusion
 The estimated accuracy of the Random Forests model is 99.34% and the estimated out-of-sample error is 0.66%. Compared to the Decison Tree model results, the Random Forests model is more accurate.
 
+## Appplying the model to the Test Data
+The Random Forest model will be applied to predict the 20 quiz results (testing dataset) as shown below.
+```{r}
+predict(rfmod, testingdata)
+```
 

@@ -260,6 +260,13 @@ Error</code></pre>
 <h2>Conclusion</h2>
 <p>The estimated accuracy of the Random Forests model is 99.34% and the estimated out-of-sample error is 0.66%. Compared to the Decison Tree model results, the Random Forests model is more accurate.</p>
 </div>
+<div id="appplying-the-model-to-the-test-data" class="section level2">
+<h2>Appplying the model to the Test Data</h2>
+<p>The Random Forest model will be applied to predict the 20 quiz results (testing dataset) as shown below.</p>
+<pre class="r"><code>predict(rfmod, testingdata)</code></pre>
+<pre><code>##  [1] B A B A A E D B A A B C B A E E A B B B
+## Levels: A B C D E</code></pre>
+</div>
 
 
 
